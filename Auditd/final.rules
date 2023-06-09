@@ -481,6 +481,12 @@
 #-a always,exit -F arch=b32 -S execve -F euid=33 -k detect_execve_www
 #-a always,exit -F arch=b64 -S execve -F euid=33 -k detect_execve_www
 
+## File Deletion by User Related Events
+-a always,exit -F arch=b32 -S rmdir -S unlink -S unlinkat -S rename -S renameat -F auid!=4294967295 -k T1070.004_1
+-a always,exit -F arch=b64 -S rmdir -S unlink -S unlinkat -S rename -S renameat -F auid!=4294967295 -k T1070.004_2
+-a always,exit -F arch=b32 -S rmdir -S unlink -S unlinkat -S rename -S renameat -F auid=0 -k T1070.004_3
+-a always,exit -F arch=b64 -S rmdir -S unlink -S unlinkat -S rename -S renameat -F auid=0 -k T1070.004_4
+
 ## Root command executions (Noisy)
 -a exit,always -F arch=b64 -F euid=0 -F auid!=4294967295 -S execve -k T1059_1
 -a exit,always -F arch=b32 -F euid=0 -F auid!=4294967295 -S execve -k T1059_2
@@ -489,11 +495,6 @@
 -a exit,always -F arch=b64 -S execve -k T1059_3
 -a exit,always -F arch=b32 -S execve -k T1059_4
 
-## File Deletion by User Related Events
--a always,exit -F arch=b32 -S rmdir -S unlink -S unlinkat -S rename -S renameat -F auid!=4294967295 -k T1070.004_1
--a always,exit -F arch=b64 -S rmdir -S unlink -S unlinkat -S rename -S renameat -F auid!=4294967295 -k T1070.004_2
--a always,exit -F arch=b32 -S rmdir -S unlink -S unlinkat -S rename -S renameat -F auid=0 -k T1070.004_3
--a always,exit -F arch=b64 -S rmdir -S unlink -S unlinkat -S rename -S renameat -F auid=0 -k T1070.004_4
 
 ## 32bit API Exploitation
 ### If you are on a 64 bit platform, everything _should_ be running
