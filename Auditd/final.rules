@@ -12,7 +12,6 @@
 ## Possible values: 0 (silent), 1 (printk, print a failure message), 2 (panic, halt the system)
 -f 1
 
-#
 ## Make the loginuid immutable. This prevents tampering with the auid.
 --loginuid-immutable
 
@@ -48,42 +47,52 @@
 ## Kernel Related Events
 -w /etc/sysctl.conf -p wa -k sysctl
 -w /etc/sysctl.d/ -p wa -k sysctl
--a always,exit -F perm=x -F auid!=-1 -F path=/sbin/insmod -k T1547.006_1
--a always,exit -F perm=x -F auid!=-1 -F path=/sbin/modprobe -k T1547.006_2
--a always,exit -F perm=x -F auid!=-1 -F path=/sbin/rmmod -k T1547.006_3
--a always,exit -F arch=b64 -S finit_module -S init_module -S delete_module -F auid!=-1 -k T1547.006_4
--a always,exit -F arch=b32 -S finit_module -S init_module -S delete_module -F auid!=-1 -k T1547.006_5
+-w /etc/modules-load.d/ -p wa -k T1574.006_1
+-a always,exit -F perm=x -F auid!=-1 -F path=/sbin/insmod -k T1547.006_2
+-a always,exit -F perm=x -F auid!=-1 -F path=/sbin/modprobe -k T1547.006_3
+-a always,exit -F perm=x -F auid!=-1 -F path=/sbin/rmmod -k T1547.006_4
+-a always,exit -F arch=b64 -S finit_module -S init_module -S delete_module -F auid!=-1 -k T1547.006_5
+-a always,exit -F arch=b32 -S finit_module -S init_module -S delete_module -F auid!=-1 -k T1547.006_6
+
+## Modprobe configuration
+-w /etc/modprobe.conf -p wa -k T1547.006_6
+-w /etc/modprobe.d -p wa -k T1547.006_7
+
+## KExec Usage
 -a always,exit -F arch=b64 -S kexec_load -k T1014_1
 -a always,exit -F arch=b32 -S sys_kexec_load -k T1014_2
--w /etc/modprobe.conf -p wa -k T1547.006_6
 
 ## Time Related Events
 -a exit,always -F arch=b32 -S adjtimex -S settimeofday -S clock_settime -k T1070.006_1
 -a exit,always -F arch=b64 -S adjtimex -S settimeofday -S clock_settime -k T1070.006_2
 -a always,exit -F arch=b32 -S clock_settime -F a0=0x0 -k T1070.006_3
 -a always,exit -F arch=b64 -S clock_settime -F a0=0x0 -k T1070.006_4
--w /etc/localtime -p wa -k T1070.006_5
--a always,exit -F arch=b32 -S utimes -k T1070.006_6
--a always,exit -F arch=b64 -S utimes -k T1070.006_7
-#-a always,exit -F arch=b32 -S utimensat -k T1070.006_8
-#-a always,exit -F arch=b64 -S utimensat -k T1070.006_9
+-a always,exit -F arch=b32 -S utimes -k T1070.006_5
+-a always,exit -F arch=b64 -S utimes -k T1070.006_6
+
+### Local time zone
+-w /etc/localtime -p wa -k T1070.006_7
 
 ## Stored Data Manipulation Events
--w /etc/issue -p wa -k T1565.001_3
--w /etc/issue.net -p wa -k T1565.001_4
--w /etc/hosts -p wa -k T1565.001_5
--w /etc/hosts.allow -k T1565.001_6
--w /etc/hosts.deny -k T1565.001_7
--w /etc/hostname -p wa -k T1565.001_8
--w /etc/sysconfig/network -p wa -k T1565.001_9
--w /etc/sysconfig/network-scripts -p w -k T1565.001_10
--a always,exit -F dir=/etc/NetworkManager/ -F perm=wa -k T1565.001_11
--w /etc/network/ -p wa -k T1565.001_12
+-w /etc/issue -p rwa -k T1565.001_1
+-w /etc/issue.net -p wa -k T1565.001_2
+-w /etc/hosts -p wa -k T1565.001_3
+-w /etc/hosts.allow -k T1565.001_4
+-w /etc/hosts.deny -k T1565.001_5
+-w /etc/hostname -p rwa -k T1565.001_6
+-w /etc/sysconfig/network -p wa -k T1565.001_7
+-w /etc/sysconfig/network-scripts -p w -k T1565.001_8
+-a always,exit -F dir=/etc/NetworkManager/ -F perm=wa -k T1565.001_9
+-w /etc/network/ -p wa -k T1565.001_10
+
+### Changes to hostname
+-a always,exit -F arch=b32 -S sethostname -S setdomainname -k T1565.001_11
+-a always,exit -F arch=b64 -S sethostname -S setdomainname -k T1565.001_12
 
 ## Stunnel
 -w /usr/sbin/stunnel -p x -k T1573.002_1
 
-## Cron configuration & scheduled jobs related events
+## Cron configuration
 -w /etc/cron.allow -p wa -k T1053.003_1
 -w /etc/cron.deny -p wa -k T1053.003_2
 -w /etc/cron.d/ -p wa -k T1053.003_3
@@ -92,25 +101,47 @@
 -w /etc/cron.monthly/ -p wa -k T1053.003_6
 -w /etc/cron.weekly/ -p wa -k T1053.003_7
 -w /etc/crontab -p wa -k T1053.003_8
--w /var/spool/cron/crontabs/ -k T1053.003_9
+-w /var/spool/cron/ -k T1053.003_9
+-w /etc/anacrontab -p wa -k T1053.003_10
+
+## System startup scripts
 -w /etc/inittab -p wa -k T1037_1
 -w /etc/init.d/ -p wa -k T1037_2
 -w /etc/init/ -p wa -k T1037_3
 -w /sbin/init -k T1037_4
--w /etc/at.allow -p wa -k T1053.001_14
--w /etc/at.deny -p wa -k T1053.001_15
--w /var/spool/at/ -p wa -k T1053.001_16
--w /etc/anacrontab -p wa -k T1053.003_17
+-w /etc/rc.local -p wa -k T1037_5
+-w /etc/init.d/ -p wa -k T1037_6
+-w /etc/update-motd.d/ -p wa -k T1037_7
+
+## Scheduled jobs
+-w /etc/at.allow -p wa -k T1053.002_1
+-w /etc/at.deny -p wa -k T1053.002_2
+-w /var/spool/at/ -p wa -k T1053.002_3
 
 ## Systemd service related events
--w /etc/systemd/system/ -k T1543.002_1
--w /usr/lib/systemd/system/ -k T1543.002_2
--w /run/systemd/system/ -k T1543.002_3
+-w /etc/systemd/ -p wa -k T1543.002_1
+-w /usr/lib/systemd/ -p wa -k T1543.002_2
+-w /run/systemd/system/ -p wa -k T1543.002_3
+-w /lib/systemd/ -p wa -k T1543.002_4
+-w /usr/bin/systemctl -p x -k T1543.002_5
+
+## System generators
+-w /etc/systemd/system-generators/ -p wa -k T1543.002_6
+-w /lib/systemd/system-generators/ -p wa -k T1543.002_7
+-w /usr/lib/systemd/system-generators -p wa -k T1543.002_8
+-w /etc/systemd/user-generators/ -p wa -k T1543.002_9
+-w /usr/lib/systemd/user-generators/ -p wa -k T1543.002_10
 
 ## Local Account Abuse Related Events
--w /etc/sudoers -p wa -k T1078.003_1
--w /etc/sudoers.d/ -p wa -k T1078.003_1
+
+### Sudoers file changes/discovery
+-w /etc/sudoers -p rwa -k T1078.003_1
+-w /etc/sudoers.d/ -p rwa -k T1078.003_1
+
+### Password change
 -w /usr/bin/passwd -p x -k T1078.003_2
+
+### Group identifiers changes
 -w /usr/sbin/groupadd -p x -k T1078.003_3
 -w /usr/sbin/groupmod -p x -k T1078.003_4
 -w /usr/sbin/addgroup -p x -k T1078.003_5
@@ -121,62 +152,67 @@
 -w /usr/sbin/realm -p x -k T1136.002_2
 
 ## Privleged Command Execution Related Events
--a exit,always -F arch=b64 -F euid=0 -F auid!=4294967295 -S execve -k T1078.003_9
--a exit,always -F arch=b32 -F euid=0 -F auid!=4294967295 -S execve -k T1078.003_10
--a always,exit -F path=/usr/sbin/userdel -F perm=x -F auid!=4294967295 -k T1078.003_11
--a always,exit -F path=/bin/ping -F perm=x -F auid!=4294967295 -k T1078.003_12
--a always,exit -F path=/bin/umount -F perm=x -F auid!=4294967295 -k T1078.003_13
--a always,exit -F path=/bin/mount -F perm=x -F auid!=4294967295 -k T1078.003_14
--a always,exit -F path=/bin/su -F perm=x -F auid!=4294967295 -k T1078.003_15
--a always,exit -F path=/bin/chgrp -F perm=x -F auid!=4294967295 -k T1078.003_16
--a always,exit -F path=/bin/ping6 -F perm=x -F auid!=4294967295 -k T1078.003_17
--a always,exit -F path=/sbin/pam_timestamp_check -F perm=x -F auid!=4294967295 -k T1078.003_18
--a always,exit -F path=/usr/sbin/unix_chkpwd -F perm=x -F auid!=4294967295 -k T1078.003_19
--a always,exit -F path=/sbin/pwck -F perm=x -F auid!=4294967295 -k T1078.003_20
--a always,exit -F path=/usr/sbin/suexec -F perm=x -F auid!=4294967295 -k T1078.003_21
--a always,exit -F path=/usr/sbin/usermod -F perm=x -F auid!=4294967295 -k T1078.003_22
--a always,exit -F path=/usr/sbin/newusers -F perm=x -F auid!=4294967295 -k T1078.003_23
--a always,exit -F path=/usr/sbin/groupdel -F perm=x -F auid!=4294967295 -k T1078.003_24
--a always,exit -F path=/usr/sbin/semanage -F perm=x -F auid!=4294967295 -k T1078.003_25
--a always,exit -F path=/usr/sbin/usernetctl -F perm=x -F auid!=4294967295 -k T1078.003_26
--a always,exit -F path=/usr/sbin/userhelper -F perm=x -F auid!=4294967295 -k T1078.003_28
--a always,exit -F path=/usr/sbin/ccreds_validate -F perm=x -F auid!=4294967295 -k T1078.003_27
--a always,exit -F path=/usr/bin/Xorg -F perm=x -F auid!=4294967295 -k T1078.003_30
--a always,exit -F path=/usr/bin/rlogin -F perm=x -F auid!=4294967295 -k T1078.003_31
--a always,exit -F path=/usr/bin/sudoedit -F perm=x -F auid!=4294967295 -k T1078.003_32
--a always,exit -F path=/usr/bin/at -F perm=x -F auid!=4294967295 -k T1078.003_33
--a always,exit -F path=/usr/bin/rsh -F perm=x -F auid!=4294967295 -k T1078.003_34
--a always,exit -F path=/usr/bin/gpasswd -F perm=x -F auid!=4294967295 -k T1078.003_35
--a always,exit -F path=/usr/bin/kgrantpty -F perm=x -F auid!=4294967295 -k T1078.003_36
--a always,exit -F path=/usr/bin/crontab -F perm=x -F auid!=4294967295 -k T1078.003_37
--a always,exit -F path=/usr/bin/sudo -F perm=x -F auid!=4294967295 -k T1078.003_38
--a always,exit -F path=/usr/bin/staprun -F perm=x -F auid!=4294967295 -k T1078.003_39
--a always,exit -F path=/usr/bin/rcp -F perm=x -F auid!=4294967295 -k T1078.003_40
--a always,exit -F path=/usr/bin/passwd -F perm=x -F auid!=4294967295 -k T1078.003_41
--a always,exit -F path=/usr/bin/chsh -F perm=x -F auid!=4294967295 -k T1078.003_42
--a always,exit -F path=/usr/bin/chfn -F perm=x -F auid!=4294967295 -k T1078.003_43
--a always,exit -F path=/usr/bin/chage -F perm=x -F auid!=4294967295 -k T1078.003_44
--a always,exit -F path=/usr/bin/setfacl -F perm=x -F auid!=4294967295 -k T1078.003_45
--a always,exit -F path=/usr/bin/chacl -F perm=x -F auid!=4294967295 -k T1078.003_46
--a always,exit -F path=/usr/bin/chcon -F perm=x -F auid!=4294967295 -k T1078.003_47
--a always,exit -F path=/usr/bin/newgrp -F perm=x -F auid!=4294967295 -k T1078.003_48
--a always,exit -F path=/usr/bin/newrole -F perm=x -F auid!=4294967295 -k T1078.003_49
--a always,exit -F path=/usr/bin/kpac_dhcp_helper -F perm=x -F auid!=4294967295 -k T1078.003_50
--a always,exit -F path=/usr/bin/sleep -F perm=x -F auid!=4294967295 -k T1078.003_52
--a always,exit -F path=/usr/bin/pgrep -F perm=x -F auid!=4294967295 -k T1078.003_54
--a always,exit -F path=/usr/bin/grep -F perm=x -F auid!=4294967295 -k T1078.003_55
--a always,exit -F path=/usr/bin/lspci -F perm=x -F auid!=4294967295 -k T1078.003_56
--a always,exit -F path=/usr/bin/udevadm -F perm=x -F auid!=4294967295 -k T1078.003_58
--a always,exit -F path=/usr/bin/findmnt -F perm=x -F auid!=4294967295 -k T1078.003_59
--a always,exit -F path=/usr/bin/netstat -F perm=x -F auid!=4294967295 -k T1078.003_60
--a always,exit -F path=/usr/bin/pkla -F perm=x -F auid!=4294967295 -k T1078.003_61
--a always,exit -F path=/usr/bin/gawk -F perm=x -F auid!=4294967295 -k T1078.003_62
--a always,exit -F path=/usr/bin/awk -F perm=x -F auid!=4294967295 -k T1078.003_63
--a always,exit -F path=/usr/bin/sed -F perm=x -F auid!=4294967295 -k T1078.003_64
+-a always,exit -F path=/usr/sbin/userdel -F perm=x -F auid!=4294967295 -k T1078.003_9
+-a always,exit -F path=/bin/ping -F perm=x -F auid!=4294967295 -k T1078.003_10
+-a always,exit -F path=/bin/umount -F perm=x -F auid!=4294967295 -k T1078.003_11
+-a always,exit -F path=/bin/mount -F perm=x -F auid!=4294967295 -k T1078.003_12
+-a always,exit -F path=/bin/su -F perm=x -F auid!=4294967295 -k T1078.003_13
+-a always,exit -F path=/bin/chgrp -F perm=x -F auid!=4294967295 -k T1078.003_14
+-a always,exit -F path=/bin/ping6 -F perm=x -F auid!=4294967295 -k T1078.003_15
+-a always,exit -F path=/sbin/pam_timestamp_check -F perm=x -F auid!=4294967295 -k T1078.003_16
+-a always,exit -F path=/usr/sbin/unix_chkpwd -F perm=x -F auid!=4294967295 -k T1078.003_17
+-a always,exit -F path=/sbin/pwck -F perm=x -F auid!=4294967295 -k T1078.003_18
+-a always,exit -F path=/usr/sbin/suexec -F perm=x -F auid!=4294967295 -k T1078.003_19
+-a always,exit -F path=/usr/sbin/usermod -F perm=x -F auid!=4294967295 -k T1078.003_20
+-a always,exit -F path=/usr/sbin/newusers -F perm=x -F auid!=4294967295 -k T1078.003_21
+-a always,exit -F path=/usr/sbin/groupdel -F perm=x -F auid!=4294967295 -k T1078.003_22
+-a always,exit -F path=/usr/sbin/semanage -F perm=x -F auid!=4294967295 -k T1078.003_23
+-a always,exit -F path=/usr/sbin/usernetctl -F perm=x -F auid!=4294967295 -k T1078.003_24
+-a always,exit -F path=/usr/sbin/userhelper -F perm=x -F auid!=4294967295 -k T1078.003_25
+-a always,exit -F path=/usr/sbin/ccreds_validate -F perm=x -F auid!=4294967295 -k T1078.003_26
+-a always,exit -F path=/usr/bin/Xorg -F perm=x -F auid!=4294967295 -k T1078.003_27
+-a always,exit -F path=/usr/bin/rlogin -F perm=x -F auid!=4294967295 -k T1078.003_28
+-a always,exit -F path=/usr/bin/sudoedit -F perm=x -F auid!=4294967295 -k T1078.003_29
+-a always,exit -F path=/usr/bin/at -F perm=x -F auid!=4294967295 -k T1078.003_30
+-a always,exit -F path=/usr/bin/rsh -F perm=x -F auid!=4294967295 -k T1078.003_31
+-a always,exit -F path=/usr/bin/gpasswd -F perm=x -F auid!=4294967295 -k T1078.003_32
+-a always,exit -F path=/usr/bin/kgrantpty -F perm=x -F auid!=4294967295 -k T1078.003_33
+-a always,exit -F path=/usr/bin/crontab -F perm=x -F auid!=4294967295 -k T1078.003_34
+-a always,exit -F path=/usr/bin/sudo -F perm=x -F auid!=4294967295 -k T1078.003_35
+-a always,exit -F path=/usr/bin/staprun -F perm=x -F auid!=4294967295 -k T1078.003_36
+-a always,exit -F path=/usr/bin/rcp -F perm=x -F auid!=4294967295 -k T1078.003_37
+-a always,exit -F path=/usr/bin/passwd -F perm=x -F auid!=4294967295 -k T1078.003_38
+-a always,exit -F path=/usr/bin/chsh -F perm=x -F auid!=4294967295 -k T1078.003_39
+-a always,exit -F path=/usr/bin/chfn -F perm=x -F auid!=4294967295 -k T1078.003_40
+-a always,exit -F path=/usr/bin/chage -F perm=x -F auid!=4294967295 -k T1078.003_41
+-a always,exit -F path=/usr/bin/setfacl -F perm=x -F auid!=4294967295 -k T1078.003_42
+-a always,exit -F path=/usr/bin/chacl -F perm=x -F auid!=4294967295 -k T1078.003_43
+-a always,exit -F path=/usr/bin/chcon -F perm=x -F auid!=4294967295 -k T1078.003_44
+-a always,exit -F path=/usr/bin/newgrp -F perm=x -F auid!=4294967295 -k T1078.003_45
+-a always,exit -F path=/usr/bin/newrole -F perm=x -F auid!=4294967295 -k T1078.003_46
+-a always,exit -F path=/usr/bin/kpac_dhcp_helper -F perm=x -F auid!=4294967295 -k T1078.003_47
+-a always,exit -F path=/usr/bin/sleep -F perm=x -F auid!=4294967295 -k T1078.003_48
+-a always,exit -F path=/usr/bin/lspci -F perm=x -F auid!=4294967295 -k T1078.003_49
+-a always,exit -F path=/usr/bin/udevadm -F perm=x -F auid!=4294967295 -k T1078.003_50
+-a always,exit -F path=/usr/bin/findmnt -F perm=x -F auid!=4294967295 -k T1078.003_51
+-a always,exit -F path=/usr/bin/pkla -F perm=x -F auid!=4294967295 -k T1078.003_52
+-a always,exit -F path=/usr/bin/gawk -F perm=x -F auid!=4294967295 -k T1078.003_53
+-a always,exit -F path=/usr/bin/awk -F perm=x -F auid!=4294967295 -k T1078.003_54
+-a always,exit -F path=/usr/bin/sed -F perm=x -F auid!=4294967295 -k T1078.003_55
+-w /usr/bin/pgrep -p x -k T1081_1
+-w /usr/bin/grep -p x -k T1081_2
+-w /usr/bin/egrep -p x -k T1081_3
+-w /usr/bin/ugrep -p x -k T1081_4
+
+## Power state
+-w /sbin/shutdown -p x -k T1529_power
+-w /sbin/poweroff -p x -k T1529_power
+-w /sbin/reboot -p x -k T1529_power
+-w /sbin/halt -p x -k T1529_power
 
 ## Media Export Related Events
 -a always,exit -F arch=b32 -S mount -F auid!=4294967295 -k T1052.001_1
--a always,exit -F arch=b64 -S mount -F auid!=4294967295 -k T1052.001_2
+-a always,exit -F arch=b64 -S mount -S umount2 -F auid!=4294967295 -k T1052.001_2
 
 ## Session Related Events
 -w /var/run/utmp -p wa -k T1136.001_1
@@ -192,17 +228,15 @@
 -w /etc/securetty -p wa -k T1078.001_6
 
 ## Pam Related Events
--w /etc/pam.d/ -p wa -k T1071
--w /etc/security/limits.conf -p wa  -k T1078.001_5
--w /etc/security/pam_env.conf -p wa -k T1078.001_6
--w /etc/security/namespace.conf -p wa -k T1078.001_7
--w /etc/security/namespace.init -p wa -k T1078.001_8
--w /etc/pam.d/common-password -p wa -k T1201
+-w /etc/pam.d/ -p wa -k T1556.003
+-w /etc/security/limits.conf -p wa  -k T1078.001_7
+-w /etc/security/limits.d/ -p wa  -k T1078.001_7
+-w /etc/security/pam_env.conf -p wa -k T1078.001_8
+-w /etc/security/namespace.conf -p wa -k T1078.001_9
+-w /etc/security/namespace.init -p wa -k T1078.001_10
+-w /etc/security/namespace.d/ -p wa -k T1078.001_11
 
 ## Network Environment
-### Changes to hostname
--a always,exit -F arch=b32 -S sethostname -S setdomainname -k network_modifications
--a always,exit -F arch=b64 -S sethostname -S setdomainname -k network_modifications
 
 ### Detect Remote Shell Use
 -a always,exit -F arch=b32 -F exe=/bin/bash -F success=1 -S connect -k "remote_shell"
@@ -218,10 +252,20 @@
 -a always,exit -F arch=b64 -S connect -F a2=28 -F success=1 -F key=network_connect_6
 -a always,exit -F arch=b32 -S connect -F a2=28 -F success=1 -F key=network_connect_6
 
+### Socket Creations - will catch both IPv4 and IPv6
+-a always,exit -F arch=b32 -S socket -F a0=2  -k T1011_1
+-a always,exit -F arch=b64 -S socket -F a0=2  -k T1011_2
+-a always,exit -F arch=b32 -S socket -F a0=10 -k T1011_3
+-a always,exit -F arch=b64 -S socket -F a0=10 -k T1011_4
+
 ## Priv Escalation Related Events
 -w /usr/bin/su -p x -k T1548.003_1
 -w /usr/bin/sudo -p x -k T1548.003_2
+
+### The purpose of this rule is to detect when an admin may be abusing power by looking in user's home dir.
 -a always,exit -F dir=/home -F uid=0 -F auid>=1000 -F auid!=4294967295 -C auid!=obj_uid -k T1548.003_3
+
+### Discretionary Access Control (DAC) modifications
 -a always,exit -F arch=b32 -S chmod -F auid!=4294967295 -k T1548.001_1
 -a always,exit -F arch=b32 -S chown -F auid!=4294967295 -k T1548.001_2
 -a always,exit -F arch=b32 -S fchmod -F auid!=4294967295 -k T1548.001_3
@@ -254,7 +298,6 @@
 -a always,exit -F arch=b32 -S setuid -S setgid -S setreuid -S setregid -k T1548.001_30
 -a always,exit -F arch=b64 -S setuid -S setgid -S setreuid -S setregid -F exit=EPERM -k T1548.001_31
 -a always,exit -F arch=b32 -S setuid -S setgid -S setreuid -S setregid -F exit=EPERM -k T1548.001_32
- #-w /usr/bin/ -p wa -k T1068
 -a exit,always -F arch=b64 -S open -F dir=/etc -F success=0 -k T1068_1
 -a exit,always -F arch=b64 -S open -F dir=/bin -F success=0 -k T1068_2
 -a exit,always -F arch=b64 -S open -F dir=/sbin -F success=0 -k T1068_3
@@ -264,32 +307,35 @@
 -a exit,always -F arch=b64 -S open -F dir=/home -F success=0 -k T1068_7
 -a exit,always -F arch=b64 -S open -F dir=/srv -F success=0 -k T1068_8
 -w /usr/bin/dbus-send -p x -k T1068_CVE_2021_3560
+-w /usr/bin/gdbus -p x -k T1068_CVE_2021_3560
 -w /usr/bin/pkexec -p x -k T1068_CVE_2021_4034
 
-# OS Credential Dumping Events
+## OS Credential Dumping Events
 -w /etc/passwd -p wa -k T1003.008_1
 -w /etc/shadow -k T1003.008_2
 -w /etc/group -p wa -k T1003.008_3
 -w /etc/gshadow -k T1003.008_4
 -w /etc/security/opasswd -k T1003.008_5
 
-# Network Recon/Account Discovery/System Configuration Recon Related Events
+## Network Recon/Account Discovery/System Configuration Recon Related Events
 -w /usr/sbin/nologin -k T1087.001_1
 -w /usr/bin/ldapsearch -p x -k T1087.002
--w /usr/bin/whoami -p x -k T1033
+-w /usr/bin/whoami -p x -k T1033_1
+-w /usr/bin/id -p x -k T1033_2
 -w /usr/bin/hostname -p x -k T1082_1
+-w /bin/uname -p x -k T1082_2
 -w /sbin/iptables -p x -k T1082_3
+-w /sbin/ip6tables -p x -k T1082_4
 -w /sbin/ifconfig -p x -k T1016.001_1
 -w /etc/resolv.conf -p wa -k T1016.001_2
 -w /sbin/xtables-nft-multi -p x -k T1082_9
 -w /usr/sbin/tcpdump -p x -k T1049_1
--w /usr/sbin/traceroute -p x -k T1049_2
--w /usr/bin/wireshark -p x -k T1049_3
--w /usr/bin/rawshark -p x -k T1049_4
--w /usr/bin/grep -p x -k T1552.001_1
--w /usr/bin/egrep -p x -k T1552.001_2
-#-w /usr/bin/ps -p x -k T1057_1
-#-w /bin/ps -p x -k T1057_2
+-w /usr/bin/ss -p x -k T1049_2
+-w /usr/bin/netstat -p x -k T1049_3
+-w /usr/sbin/traceroute -p x -k T1049_4
+-w /usr/bin/wireshark -p x -k T1049_5
+-w /usr/bin/tshark -p x -k T1049_6
+-w /usr/bin/rawshark -p x -k T1049_7
 -a always,exit -F path=/usr/bin/ps -F perm=x -k T1057_1
 -a always,exit -F exe=/bin/ps -F perm=x -k T1057_2
 -w /usr/bin/showmount -p x -k T1135_1
@@ -300,14 +346,10 @@
 -w /usr/sbin/nmblookup -p x -k T1135_6
 -w /etc/exports -p wa -k T1135_7
 -w /etc/fstab -p wa -k T1135_8
--w /usr/bin/ufw -p x -k T1518.001_1
--w /usr/bin/pfctl -p x -k T1518.001_2
--w /usr/bin/pf -p x -k T1518.001_3
--w /usr/bin/getenforce -p x -k T1518.001_4
--w /usr/sbin/ufw -p x -k T1518.001_5
--w /usr/sbin/pfctl -p x -k T1518.001_6
--w /usr/sbin/pf -p x -k T1518.001_7
--w /usr/sbin/getenforce -p x -k T1518.001_8
+-w /usr/sbin/ufw -p x -k T1518.001_1
+-w /usr/sbin/pfctl -p x -k T1518.001_2
+-w /usr/sbin/pf -p x -k T1518.001_3
+-w /usr/sbin/getenforce -p x -k T1518.001_4
 
 ## Data Copy(Local)
 -w /usr/bin/cp -p x -k T1005_1
@@ -324,42 +366,76 @@
 -w /usr/bin/zip -p x -k T1002_1
 -w /usr/bin/gzip -p x -k T1002_2
 -w /usr/bin/tar -p x -k T1002_3
+-w /usr/bin/bzip2 -p x -k T1002_4
+-w /usr/bin/lz4 -p x -k T1002_5
 
 ## Remote Access Related Events
 -w /usr/bin/wget -p x -k T1219_1
 -w /usr/bin/curl -p x -k T1219_2
 -w /bin/nc -p x -k T1219_3
--w /bin/nc.traditional -p x -k T1219_4
--w /bin/netcat -p x -k T1219_5
--w /usr/bin/ncat -p x -k T1219_6
--w /usr/bin/ssh -p x -k T1219_7
--w /usr/bin/socat -p x -k T1219_8
--w /usr/bin/rdesktop -p x -k T1219_9
--w /bin/nc.openbsd -p x -k T1219_10
--w /usr/bin/teamviewer -p x -k T1219_11
--w /usr/bin/LogMein -p x -k T1219_12
+-w /bin/netcat -p x -k T1219_4
+-w /usr/bin/ncat -p x -k T1219_5
+-w /usr/bin/ssh -p x -k T1219_6
+-w /usr/bin/socat -p x -k T1219_7
+-w /usr/bin/rdesktop -p x -k T1219_8
+-w /usr/bin/teamviewer -p x -k T1219_9
+-w /usr/bin/LogMein -p x -k T1219_10
+-a always,exit -F arch=b32 -S mknod -S mknodat -k T1219_13
+-a always,exit -F arch=b64 -S mknod -S mknodat -k T1219_14
+
+## Remote File Copy
+-w /usr/bin/ftp -p x -k T1105_1
+-w /usr/bin/scp -p x -k T1105_2
+-w /usr/bin/sftp -p x -k T1105_3
 
 ## Pre-OS Boot
 -w /boot/grub2/grub.cfg -p wa -k T1542.003_1
 
-##Third Party Software
-# RPM (Redhat/CentOS)
+# Software Management ---------------------------------------------------------
+
+## RPM (Redhat/CentOS)
 -w /usr/bin/rpm -p x -k T1072_1
 -w /usr/bin/yum -p x -k T1072_2
 
-# YAST/Zypper/RPM (SuSE)
--w /sbin/yast -p x -k T1072_3
--w /sbin/yast2 -p x -k T1072_4
--w /bin/rpm -p x -k T1072_5
--w /usr/bin/zypper -k T1072_6
+## PIP(3) (Python installs)
+-w /usr/bin/pip -p x -k T1072_3
+-w /usr/local/bin/pip -p x -k T1072_4
+-w /usr/bin/pip3 -p x -k T1072_5
+-w /usr/local/bin/pip3 -p x -k T1072_6
 
-# DPKG / APT-GET (Debian/Ubuntu)
--w /usr/bin/dpkg -p x -k T1072_7
--w /usr/bin/apt-add-repository -p x -k T1072_8
--w /usr/bin/apt-get -p x -k T1072_9
--w /usr/bin/aptitude -p x -k T1072_10
+## Docker
+-w /usr/bin/dockerd -k docker
+-w /usr/bin/docker -k docker
+-w /usr/bin/docker-containerd -k docker
+-w /usr/bin/docker-runc -k docker
+-w /var/lib/docker -k docker
+-w /etc/docker -k docker
+-w /etc/sysconfig/docker -k docker
+-w /etc/sysconfig/docker-storage -k docker
+-w /usr/lib/systemd/system/docker.service -k docker
+-w /usr/lib/systemd/system/docker.socket -k docker
+
+## Virtualization stuff
+-w /usr/bin/qemu-system-x86_64 -p x -k qemu-system-x86_64
+-w /usr/bin/qemu-img -p x -k qemu-img
+-w /usr/bin/qemu-kvm -p x -k qemu-kvm
+-w /usr/bin/qemu -p x -k qemu
+-w /usr/bin/virtualbox -p x -k virtualbox
+-w /usr/bin/virt-manager -p x -k virt-manager
+-w /usr/bin/VBoxManage -p x -k VBoxManage
+
+## Inter Process Communication
+-a always,exit -F arch=b64 -S msgctl -S msgget -k T1559_1
+-a always,exit -F arch=b64 -S semctl -k T1559_2
+-a always,exit -F arch=b64 -S semget -k T1559_3
+-a always,exit -F arch=b64 -S semop -k T1559_4
+-a always,exit -F arch=b64 -S semtimedop -k T1559_5
+-a always,exit -F arch=b64 -S shmctl -k T1559_6
+-a always,exit -F arch=b64 -S shmget -k T1559_7
 
 ## Code injection Related Events
+### These rules watch for code injection by the ptrace facility.
+### This could indicate someone trying to do something bad or just debugging
 -a always,exit -F arch=b32 -S ptrace -k T1055.008_1
 -a always,exit -F arch=b64 -S ptrace -k T1055.008_2
 -a always,exit -F arch=b32 -S ptrace -F a0=0x4 -k T1055.008_3
@@ -368,26 +444,50 @@
 -a always,exit -F arch=b64 -S ptrace -F a0=0x5 -k T1055.008_6
 -a always,exit -F arch=b32 -S ptrace -F a0=0x6 -k T1055.008_7
 -a always,exit -F arch=b64 -S ptrace -F a0=0x6 -k T1055.008_8
--w /etc/ld.so.preload -k T1574.006
+
+## Anonymous File Creation
+### These rules watch the use of memfd_create
+### "memfd_create" creates anonymous file and returns a file descriptor to access it
+### When combined with "fexecve" can be used to stealthily run binaries in memory without touching disk
+### Reflective Code Loading
+-a always,exit -F arch=b64 -S memfd_create -F key=T1620
+-a always,exit -F arch=b32 -S memfd_create -F key=T1620
+
+## Library search paths
+-w /etc/ld.so.preload -k T1574.006_1
+-w /etc/ld.so.conf -p wa -k T1574.006_2
+-w /etc/ld.so.conf.d -p wa -k T1574.006_3
 
 ## Shell configuration Persistence Related Events
--a exit,always -F dir=/etc/profile.d -F perm=w -k T1546.004_1
-#-w /etc/profile.d/ -k T1546.004_1
--w /etc/profile -k T1546.004_2
--w /etc/shells -k T1546.004_3
--w /etc/bashrc -k T1546.004_4
--w /etc/csh.cshrc -k T1546.004_5
--w /etc/csh.login -k T1546.004_6
+-w /etc/profile.d/ -p wa -k T1546.004_1
+-w /etc/profile -p wa -k T1546.004_2
+-w /etc/shells -p wa -k T1546.004_3
+-w /etc/bashrc -p wa -k T1546.004_4
+-w /etc/csh.cshrc -p wa -k T1546.004_5
+-w /etc/csh.login -p wa -k T1546.004_6
 -w /root/.bash_profile -p w -k T1546.004_7
 -w /root/.bashrc -p w -k T1546.004_8
--w /etc/ssh/sshd_config -p w -k T1098.004_9
+-w /root/.bash_logout -p wa -k T1546.004_9
 
-#Log all commands (Noisy)
--a exit,always -F arch=b64 -S execve -k T1059_1
--a exit,always -F arch=b32 -S execve -k T1059_2
+## SSH Configuration Manipulation
+-w /etc/ssh/sshd_config -p wa -k T1098.004_1
+-w /etc/ssh/sshd_config.d/ -p wa -k T1098.004_2
 
-#Remote File Copy
--w /usr/bin/ftp -p x -k T1105
+### Root ssh key tampering
+-w /root/.ssh -p wa -k T1098.004_3
+
+## Web Server Actvity
+## Change the number "33" to the ID of your WebServer user. Default: www-data:x:33:33
+#-a always,exit -F arch=b32 -S execve -F euid=33 -k detect_execve_www
+#-a always,exit -F arch=b64 -S execve -F euid=33 -k detect_execve_www
+
+## Root command executions (Noisy)
+-a exit,always -F arch=b64 -F euid=0 -F auid!=4294967295 -S execve -k T1059_1
+-a exit,always -F arch=b32 -F euid=0 -F auid!=4294967295 -S execve -k T1059_2
+
+## Log all commands (Noisy)
+-a exit,always -F arch=b64 -S execve -k T1059_3
+-a exit,always -F arch=b32 -S execve -k T1059_4
 
 ## File Deletion by User Related Events
 -a always,exit -F arch=b32 -S rmdir -S unlink -S unlinkat -S rename -S renameat -F auid!=4294967295 -k T1070.004_1
